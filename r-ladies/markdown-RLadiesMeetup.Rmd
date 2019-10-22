@@ -1,0 +1,117 @@
+
+---
+title: "Ejemplos_taller"
+author: "Patricia"
+date: "14 de diciembre de 2018"
+output: 
+  html_document:
+    theme: cerulean
+    runtime: shiny
+---
+<!-- A continuación el chunk principal, determina la configuración general -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+### Texto
+Este es un documento de *R* **RMarkdown** con el que podemos obtener archivos en los siguientes formatos:
+
+1. HTML
+2. PDF
+3. Ms Word
+
+
+Más información en el siguiente [link](http://rmarkdown.rstudio.com)
+
+### Código
+
+La fecha de hoy es: `r Sys.Date()`
+
+La fecha de hoy es: 
+
+```{r}
+Sys.Date()
+```
+
+```{r message=FALSE}
+library("ISLR")
+library("tidyverse")
+library("ggvis")
+library("knitr")
+library("ggplot2")
+```
+
+vamos a trabajar con los datos `Hitters` de la librería `ISLR`. Encontramos NA entonces los eliminamos con la función `na.omit()`
+
+```{r include=FALSE }
+datos = na.omit(Hitters)
+```
+```{r chunk1, results='hide'}
+datos %>%
+  ggvis(~Hits,~Salary)%>%
+  layer_points()
+```
+
+Los salarios de los jugadores versus el número de Hits se comportan de la siguiente forma
+
+```{r ref.label='chunk1', echo=FALSE}
+```
+Nos interesa ajustar un modelo del tipo
+$$ Y=\alpha+\beta X + \epsilon $$
+ Donde $y$ es la variable **salario** y $X$ es la variable **Número de Hits**
+
+<!-- Esto es un comentario solamente, cómo:control+shift+C -->
+
+
+
+```{r echo= FALSE}
+fit=lm(Salary~Hits, data=datos)
+summary(fit)
+resultados = summary
+resultados
+```
+
+
+
+```{r message= FALSE}
+datos %>%
+  ggvis(~Hits,~Salary)%>%
+  layer_points()%>%
+  layer_model_predictions(model="lm",se=TRUE)
+```
+
+###Gráfico interactivo
+```{r}
+datos %>%
+  ggvis(~Hits,~Salary)%>%
+  layer_densities(adjust = input_slider(.1,2, value = 1, step = .1, 
+                                        label = "Bandiwidth"))
+```
+Ahora queremos ver cuales son los salarios promedio según la liga a la que pertenecen los  jugadores.
+
+```{r echo= FALSE}
+salario = datos%>%
+  group_by(NewLeague)%>%
+  summarise(SalarioPromedio=mean(Salary))
+salario
+library (kableExtra)   
+kable(salario)%>%
+  kable_styling(bootstrap_options = "striped",full_width = F )  
+```
+
+
+
+© 2019 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Help
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About

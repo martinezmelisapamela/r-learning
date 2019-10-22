@@ -212,14 +212,14 @@ MLPresultados_df
 data("Ionosphere")
 set.seed(30898558)
 #selecciono 15 columnas del dataset
-Kmeans_datos <- Ionosphere[,c(sample(ncol(Ionosphere)-1,15),ncol(Ionosphere))]
+datos <- Ionosphere[,c(sample(ncol(Ionosphere)-1,15),ncol(Ionosphere))]
 #borro columnas en 0
-Kmeans_datos <- Kmeans_datos[,apply(Kmeans_datos,2,function(x){all(x!=0)})]
+datos <- datos[,apply(datos,2,function(x){all(x!=0)})]
 #cambio a numericas las vbles. categoricas, en el caso de las clases las cambio: good=2, bad =1
-Kmeans_datos$Class = as.numeric(as.factor(Kmeans_datos$Class))
+datos$Class = as.numeric(as.factor(datos$Class))
 
 #estandarizo datos
-datos.scaled <- scale(Kmeans_datos)
+datos.scaled <- scale(datos)
 
 #busco un cluster optimo
 fviz_nbclust(datos.scaled, kmeans, method = "wss")

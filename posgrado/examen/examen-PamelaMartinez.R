@@ -252,6 +252,8 @@ fviz_cluster(pam.res, geom = "point", ellipse.type = "norm")
 #############################
 hc.cut <- hcut(datos.scaled, k = 4, hc_method = "complete")
 
+##sads
+
 
 
 

@@ -345,7 +345,30 @@ hc.avg_euclidean <-hclust(dist(datos.scaled,method='euclidean'), method = "avera
 hc.avg_manhattan <-hclust(dist(datos.scaled, method = "manhattan"), method = "average")
 
 #Visualizo clusteres
-plot(hc.ward_euclidean, hang=-1, ann=TRUE,main="euclidean",xlab='',ylab='')
-plot(hc.ward_manhattan, hang=-1, ann=TRUE,main="manhattan",xlab='',ylab='')
+plot(hc.avg_euclidean, hang=-1, ann=TRUE,main="euclidean",xlab='',ylab='')
+plot(hc.avg_manhattan, hang=-1, ann=TRUE,main="manhattan",xlab='',ylab='')
+
+#Podo arboles en 10 clusters
+K=10
+avg.eu<-cutree(hc.avg_euclidean, k=K)
+avg.mnh<-cutree(hc.avg_manhattan, k=K)
+
+#Obtengo centroides
+cent.avg.eu<-NULL
+cent.avg.mnh<-NULL
+for(k in 1:K){
+  cent.avg.eu <- rbind(cent.avg.eu, colMeans(datos.scaled[avg.eu == k, , drop = FALSE]))
+  cent.avg.mnh <- rbind(cent.avg.mnh, colMeans(datos.scaled[avg.mnh == k, , drop = FALSE]))
+}
+
+#2° iteracion de clusterizado con arboles podados con linkage multiple
+hc1.avg_euclidean <- hclust(dist(cent.avg.eu,method='euclidean'), method = "complete", members = table(avg.eu))
+hc1.avg_manhattan <- hclust(dist(cent.avg.mnh, method='manhattan'), method = "complete", members = table(avg.mnh))
+
+#Muestro comparacion entre la 1° y 2° iteracion de clusterizado
+plot(hc.avg_euclidean, hang=-1, ann=TRUE,main="euclidean",xlab='',ylab='')
+plot(hc1.avg_euclidean, hang=-1, ann=TRUE, main='por centros', xlab='', ylab='')
+plot(hc.avg_manhattan, hang=-1, ann=TRUE,main="manhattan",xlab='',ylab='')
+plot(hc1.avg_manhattan, hang=-1, ann=TRUE, main='por centros', xlab='', ylab='')
 
 

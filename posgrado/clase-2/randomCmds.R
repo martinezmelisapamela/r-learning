@@ -57,4 +57,11 @@ df
 
 #Si quiero ver la estructuta interna de un dataset lo que uso es el comando str = structure
 str(data)
+
+
+####
+help("hclust")
+
+
+
  

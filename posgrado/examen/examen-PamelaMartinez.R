@@ -221,9 +221,8 @@ datos$Class = as.numeric(as.factor(datos$Class))
 #estandarizo datos
 datos.scaled <- scale(datos)
 
-#busco un cluster optimo
+#busco un numero de cluster adecuado
 fviz_nbclust(datos.scaled, kmeans, method = "wss")
-fviz_nbclust(datos.scaled, kmeans, method = "silhouette")
 nb<- NbClust(datos.scaled, distance = "euclidean", method = "kmeans")
 
 
@@ -232,32 +231,121 @@ nb<- NbClust(datos.scaled, distance = "euclidean", method = "kmeans")
 ##########################
 
 #En funcion del los resultados anteriores aplico kmeans utilizando 4 como cantidad de clusters
-mdl_4c <- kmeans(datos.scaled, centers=4)
+mdl_4c <- kmeans(datos.scaled, centers=4, nstart = 10 , iter.max = 50)
+
+#Inspecciono el modelo resultante
+mdl_4c$size
+mdl_4c$withinss
+mdl_4c$betweenss
 
 #Visualizo clusters
 fviz_cluster(mdl_4c, data=datos.scaled, geom = "point", ellipse.type = "norm")
 
-######################
-### PAM CLUSTERING ###
-######################
+##############################
+### PAM Y CLARA CLUSTERING ###
+##############################
 require(cluster)
 #En funcion del los resultados anteriores aplico PAM utilizando 4 como cantidad de clusters
+
+#Metodo PAM
 pam.res<-pam(datos.scaled, 4)
+pam.res$clusinfo
+
 #Visualizo clusters
 fviz_cluster(pam.res, geom = "point", ellipse.type = "norm")
 
+#Metodo CLARA
+clara.res<-clara(datos.scaled, 4)
+clara.res$clusinfo
+
+#Visualizo clusters
+fviz_cluster(clara.res, geom = "point", ellipse.type = "norm")
 
 #############################
 ### CLUSTERING JERARQUICO ###
 #############################
-hc.cut <- hcut(datos.scaled, k = 4, hc_method = "complete")
+library(graphics)
+library(corrgram)
 
-##sads
+#Linkage simple
+#--------------
+
+#1° iteracion de clusterizado sin arboles podados con linkage simple
+hc.single_euclidean <-hclust(dist(datos.scaled,method='euclidean'), method = "single")
+hc.single_manhattan <-hclust(dist(datos.scaled, method = "manhattan"), method = "single")
+
+#Visualizo clusteres
+plot(hc.single_euclidean, hang=-1, ann=TRUE,main="euclidean",xlab='',ylab='')
+plot(hc.single_manhattan, hang=-1, ann=TRUE,main="manhattan",xlab='',ylab='')
+
+#Podo arboles en 10 clusters
+K=10
+sgl.eu<-cutree(hc.single_euclidean, k=K)
+sgl.mnh<-cutree(hc.single_manhattan, k=K)
+
+#Obtengo centroides
+cent.sgl_eu<-NULL
+cent.sgl_mnh<-NULL
+for(k in 1:K){
+  cent.sgl_eu <- rbind(cent.sgl_eu, colMeans(datos.scaled[sgl.eu == k, , drop = FALSE]))
+  cent.sgl_mnh <- rbind(cent.sgl_mnh, colMeans(datos.scaled[sgl.mnh == k, , drop = FALSE]))
+}
+
+#2° iteracion de clusterizado con arboles podados con linkage simple
+hc1.single_euclidean <- hclust(dist(cent.sgl_eu,method='euclidean'), method = "single", members = table(sgl.eu))
+hc1.single_manhattan <- hclust(dist(cent.sgl_mnh, method='manhattan'), method = "single", members = table(sgl.mnh))
+
+#Muestro comparacion entre la 1° y 2° iteracion de clusterizado
+plot(hc.single_euclidean, hang=-1, ann=TRUE,main="euclidean",xlab='',ylab='')
+plot(hc1.single_euclidean, hang=-1, ann=TRUE, main='por centros', xlab='', ylab='')
+plot(hc.single_manhattan, hang=-1, ann=TRUE,main="manhattan",xlab='',ylab='')
+plot(hc1.single_manhattan, hang=-1, ann=TRUE, main='por centros', xlab='', ylab='')
 
 
+#Linkage Completo
+#----------------
+
+#1° iteracion de clusterizado sin arboles podados con lincage completo
+hc.complete_euclidean <-hclust(dist(datos.scaled,method='euclidean'), method = "complete")
+hc.complete_manhattan <-hclust(dist(datos.scaled, method = "manhattan"), method = "complete")
+
+#Visualizo clusteres
+plot(hc.complete_euclidean, hang=-1, ann=TRUE,main="euclidean",xlab='',ylab='')
+plot(hc.complete_manhattan, hang=-1, ann=TRUE,main="manhattan",xlab='',ylab='')
+
+#Podo arboles en 10 clusters
+K=10
+cmpl.eu<-cutree(hc.complete_euclidean, k=K)
+cmpl.mnh<-cutree(hc.complete_manhattan, k=K)
+
+#Obtengo centroides
+cent.cmpl.eu<-NULL
+cent.cmpl.mnh<-NULL
+for(k in 1:K){
+  cent.cmpl.eu <- rbind(cent.cmpl.eu, colMeans(datos.scaled[cmpl.eu == k, , drop = FALSE]))
+  cent.cmpl.mnh <- rbind(cent.cmpl.mnh, colMeans(datos.scaled[cmpl.mnh == k, , drop = FALSE]))
+}
+
+#2° iteracion de clusterizado con arboles podados con linkage multiple
+hc1.complete_euclidean <- hclust(dist(cent.cmpl.eu,method='euclidean'), method = "complete", members = table(cmpl.eu))
+hc1.complete_manhattan <- hclust(dist(cent.cmpl.mnh, method='manhattan'), method = "complete", members = table(cmpl.mnh))
+
+#Muestro comparacion entre la 1° y 2° iteracion de clusterizado
+plot(hc.complete_euclidean, hang=-1, ann=TRUE,main="euclidean",xlab='',ylab='')
+plot(hc1.complete_euclidean, hang=-1, ann=TRUE, main='por centros', xlab='', ylab='')
+plot(hc.complete_manhattan, hang=-1, ann=TRUE,main="manhattan",xlab='',ylab='')
+plot(hc1.complete_manhattan, hang=-1, ann=TRUE, main='por centros', xlab='', ylab='')
 
 
+#Linkage Promedio
+#------------------
 
+#1° iteracion de clusterizado sin arboles podados con lincage completo
+hc.avg_euclidean <-hclust(dist(datos.scaled,method='euclidean'), method = "average")
+hc.avg_manhattan <-hclust(dist(datos.scaled, method = "manhattan"), method = "average")
 
+#Visualizo clusteres
+plot(hc.ward_euclidean, hang=-1, ann=TRUE,main="euclidean",xlab='',ylab='')
+plot(hc.ward_manhattan, hang=-1, ann=TRUE,main="manhattan",xlab='',ylab='')
 
 

@@ -8,6 +8,8 @@ library(factoextra)
 library(cluster)
 library(NbClust)
 
+
+
 #***************************#
 #** Metodos supervisados  **#
 #***************************# 
@@ -21,17 +23,16 @@ library(NbClust)
 data("Ionosphere")
 set.seed(30898558)
 #selecciono 15 columnas del dataset
-datos<- Ionosphere[,c(sample(ncol(Ionosphere)-2,14),ncol(Ionosphere))]
-#la sentencia original era:
-#datos <- Ionosphere[,c(sample(ncol(Ionosphere)-1,15),ncol(Ionosphere))]
-#sin embargo cambie los valores originales ya que las entre las columnas
-#que toma estan V1 y V11, lo cual en el momento de entrenar el algoritmo 
-#me genera un error porque las interpreta como reptidas.
+datos<- Ionosphere[,c(sample(ncol(Ionosphere)-1,15),ncol(Ionosphere))]
+
+#head(datos)
+#str(datos)
 
 #separo datos en entrenamiento y prueba
 inTraining <- createDataPartition(datos$Class, p = .75, list = FALSE)
 train <- datos[ inTraining,]
 test  <- datos[-inTraining,]
+
 #borro columnas en 0
 training <- train[,apply(datos,2,function(x){all(x!=0)})]
 testing <- test[,apply(datos,2,function(x){all(x!=0)})]
@@ -41,58 +42,78 @@ ctrl <- trainControl(method = "cv",
                      number = 10,
                      classProbs = TRUE)
 #entreno C4.5
-c4.5Fit <- train(
+c4.5 <- train(
   Class ~ .,
   data = training,
   method = "J48",
   trControl = ctrl
 )
+
 #hago la prediccion
-pc4.5<-predict(c4.5Fit,testing)
+pc4.5<-predict(c4.5,testing)
+
 #guardo resultados
 cfm_pc4.5<-confusionMatrix(pc4.5,testing$Class)
+cfm_pc4.5
 
 #entreno C5.0
 grid <- expand.grid(.winnow = c(TRUE,FALSE), .trials=c(1,5,10,15,20), .model="tree" )
-c5.0Fit <- train(
+c5.0 <- train(
   Class ~ .,
   data = training,
   method = "C5.0",
   trControl = ctrl,
   tuneGrid = grid
 )
+
+
 #hago la prediccion
-pC5.0<-predict(c5.0Fit, testing)
+pC5.0<-predict(c5.0, testing)
+
 #guardo resultados
 cfm_pc5.0<-confusionMatrix(pc4.5,testing$Class)
+cfm_pc5.0
 
 #entreno CART con rpart
-rpartFit <- train(
+rpart <- train(
   Class ~ .,
   data = training,
   method = "rpart",
   trControl = ctrl,
   tuneLength = 6
 )
+
 #hago la prediccion
-prpart<-predict(rpartFit,testing)
+prpart<-predict(rpart,testing)
+
 #guardo resultados
 cfm_rpart<-confusionMatrix(prpart, testing$Class)
+cfm_rpart
 
 #entreno CART con rpart2
-rpart2Fit <- train(
+rpart2 <- train(
   Class ~ .,
   data = training,
   method = "rpart2",
   trControl = ctrl,
   tuneLength = 6
 )
+
 #hago la prediccion
-prpart2<-predict(rpart2Fit,testing)
+prpart2<-predict(rpart2,testing)
+
 #guardo resultados
 cfm_prpart2<-confusionMatrix(prpart2,testing$Class)
+cfm_prpart2
 
-#resumen de resultados
+#resumen resultados de los modelos obtenidos
+rbind(c4.5$results[rownames(c4.5$bestTune),3:4],
+      c5.0$results[rownames(c5.0$bestTune),4:5],
+      rpart$results[rownames(rpart$bestTune),2:3],
+      rpart2$results[rownames(rpart$bestTune),2:3])
+
+
+#resumen de resultados de las predicciones
 accu<-c(cfm_pc4.5$overall[1], cfm_pc5.0$overall[1], 
        cfm_rpart$overall[1],cfm_prpart2$overall[1])
 kpp<-c(cfm_pc4.5$overall[2], cfm_pc5.0$overall[2], 
@@ -174,6 +195,8 @@ mlp1 <- train(
   tuneGrid = data.frame(size=40)
 )
 
+plotnet(mlp1$finalModel, x_names=names(RNtraining)[1:ncol(RNtraining)-1],y_names=levels(RNtraining$Class))
+
 #2° entrenamiento con 15 capas ocultas
 mlp2 <- train(
   Class ~.,
@@ -184,8 +207,10 @@ mlp2 <- train(
   tuneLength=15
 )
 
+plotnet(mlp2$finalModel, x_names=names(RNtraining)[1:ncol(RNtraining)-1],y_names=levels(RNtraining$Class))
+
 #3° entrenamiento con un valor de aprendizaje n=0.05
-mlp3 <- train(
+mlp3 <- caret:::train(
   Class ~ .,
   data = RNtraining,
   method = "mlpML",
@@ -203,6 +228,13 @@ rownames(MLPresultados_df) <-c("1° entrenamiento", "2° entrenamiento", "3° entre
 MLPresultados_df
 
 
+
+
+
+
+library(ggplot2)
+
+plotnet(mlp3$finalModel, x_names=names(RNtraining)[1:ncol(RNtraining)-1],y_names=levels(RNtraining$Class))
 
 #*****************************#
 #** Metodos No supervisados **#
